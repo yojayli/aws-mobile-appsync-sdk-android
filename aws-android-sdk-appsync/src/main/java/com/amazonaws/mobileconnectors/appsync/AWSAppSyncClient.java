@@ -126,6 +126,7 @@ public class AWSAppSyncClient {
     }
 
     private AWSAppSyncClient(AWSAppSyncClient.Builder builder) {
+        Log.i(TAG, "Initializing AWSAppSyncClient YJ");
         applicationContext = builder.mContext.getApplicationContext();
 
         //Create the Signer interceptor. The notion of "Signer" is overloaded here as apart
