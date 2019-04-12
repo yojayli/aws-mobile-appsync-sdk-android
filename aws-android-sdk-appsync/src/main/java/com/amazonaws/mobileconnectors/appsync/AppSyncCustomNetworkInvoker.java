@@ -225,9 +225,14 @@ public class AppSyncCustomNetworkInvoker {
                                                return;
                                            }
 
-                                           if (response.isSuccessful()) {
-                                               String responseString = response.body().string();
+                                           // check if need to retry mutation
+                                           String responseString = response.body().string();
+                                           if (shouldRetry(response.isSuccessful(), responseString)) {
+                                               queueHandler.setMutationInProgressStatusToFalse();
+                                               return;
+                                           }
 
+                                           if (response.isSuccessful()) {
                                                try {
                                                    JSONObject jsonObject = new JSONObject(responseString);
 
@@ -312,6 +317,31 @@ public class AppSyncCustomNetworkInvoker {
                 .header(HEADER_ACCEPT_TYPE, ACCEPT_TYPE)
                 .header(HEADER_CONTENT_TYPE, CONTENT_TYPE);
         return httpCallFactory.newCall(requestBuilder.build());
+    }
+
+    private boolean shouldRetry(boolean isResponseSuccessful, String response) {
+        if (!isResponseSuccessful) {
+            //Unauthorized (http status code: 401), ...
+            return true;
+        }
+        if (isResponseSuccessful) {
+            String errorType = getErrorType(response);
+            return AppSyncRetryOfflineMutationInterceptor.shouldRetry(errorType);
+        }
+        return false;
+    }
+
+    private String getErrorType(String response) {
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            JSONArray errors = jsonObject.optJSONArray("errors");
+            JSONObject error = errors.getJSONObject(0);
+            String errorType = error.getString("errorType");
+            return errorType;
+        } catch (Exception e) {
+//            e.printStackTrace();
+            return null;
+        }
     }
 
 }

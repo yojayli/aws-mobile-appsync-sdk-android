@@ -395,6 +395,10 @@ class AppSyncOfflineMutationInterceptor implements ApolloInterceptor {
         this.conflictResolver = conflictResolver;
     }
 
+    public QueueUpdateHandler getQueueUpdateHandler(){
+        return queueHandler;
+    }
+
     public <D extends Mutation.Data, T, V extends Mutation.Variables> void retryConflictMutation(@Nonnull Mutation<D, T, V> mutation, String uniqueIdentifierForOriginalMutation) {
 
         //Remove callback from map. This will return null for persistent offline mutations

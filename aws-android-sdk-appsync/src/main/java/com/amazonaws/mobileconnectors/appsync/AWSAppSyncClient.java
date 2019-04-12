@@ -178,19 +178,22 @@ public class AWSAppSyncClient {
                 sqlCacheOperations,
                 networkInvoker);
 
-                //Create the Apollo Client and setup the interceptor chain.
+        AppSyncOfflineMutationInterceptor appSyncOfflineMutationInterceptor = new AppSyncOfflineMutationInterceptor(
+                mAppSyncOfflineMutationManager,
+                false,
+                builder.mContext,
+                mutationsToRetryAfterConflictResolution,
+                this,
+                builder.mConflictResolver,
+                builder.mMutationQueueExecutionTimeout);
+
+        //Create the Apollo Client and setup the interceptor chain.
         ApolloClient.Builder clientBuilder = ApolloClient.builder()
                 .serverUrl(builder.mServerUrl)
                 .normalizedCache(builder.mNormalizedCacheFactory, builder.mResolver)
                 .addApplicationInterceptor(optimisticUpdateInterceptor)
-                .addApplicationInterceptor(new AppSyncOfflineMutationInterceptor(
-                        mAppSyncOfflineMutationManager,
-                        false,
-                        builder.mContext,
-                        mutationsToRetryAfterConflictResolution,
-                        this,
-                        builder.mConflictResolver,
-                        builder.mMutationQueueExecutionTimeout))
+                .addApplicationInterceptor(appSyncOfflineMutationInterceptor)
+                .addApplicationInterceptor(new AppSyncRetryOfflineMutationInterceptor(appSyncOfflineMutationInterceptor.getQueueUpdateHandler()))
                 .addApplicationInterceptor(new AppSyncComplexObjectsInterceptor(builder.mS3ObjectManager))
                 .okHttpClient(okHttpClient);
 
